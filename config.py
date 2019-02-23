@@ -1,0 +1,5 @@
+DATABASE_NAME = "data/db.json"
+BOOKLIST_PATH = "booklist.txt"
+BOOKLIST_JSON_PATH = "booklist_dict.json"
+BOOKLIST_UPDATE_JSON_PATH = "booklist_update_dict,json"
+URL = "127.0.0.1:5000"
