@@ -1,27 +1,25 @@
 import json
-import shutil
-import pytest
+import os
 import requests
-import api.app as server
-from config import BOOKLIST_JSON_PATH, BOOKLIST_UPDATE_JSON_PATH, URL
+from config import BOOKLIST_JSON_PATH, BOOKLIST_UPDATE_JSON_PATH, URL, DATABASE_DIRECTORY
 
 
-@pytest.fixture()
-def database_load_test():
-    shutil.rmtree('data')
-    server.run()
+def test_database_load():
+    filelist = [f for f in os.listdir(DATABASE_DIRECTORY)]
+    for f in filelist:
+        os.remove(os.path.join(DATABASE_DIRECTORY, f))
     headers = {"Content-Type": "application/json"}
 
     with open(BOOKLIST_JSON_PATH) as file:
         test_content = json.loads(file.read())
 
     for i in range(len(test_content)):
-        requests.put("/".join([URL, str(i)]), json.dumps(test_content[i]), headers=headers)
+        requests.put("/".join([URL, str(i)]), json.dumps(test_content[str(i)]), headers=headers)
 
     result_dict = dict()
     for i in range(len(test_content)):
         r = requests.get("/".join([URL, str(i)]), headers=headers)
-        result_dict[i] = r.content
+        result_dict[str(i)] = r.content
 
     assert result_dict, test_content
 
@@ -29,7 +27,7 @@ def database_load_test():
         update_content = json.loads(file.read())
 
     for i in range(len(update_content)):
-        requests.put("/".join([URL, str(i)]), json.dumps(test_content[i]), headers=headers)
+        requests.put("/".join([URL, str(i)]), json.dumps(test_content[str(i)]), headers=headers)
 
     result_dict = dict()
     for i in range(len(update_content)):
@@ -39,14 +37,14 @@ def database_load_test():
     assert result_dict, update_content
 
     for i in range(len(test_content)):
-        requests.delete("/".join([URL, str(i)]), headers = headers)
+        requests.delete("/".join([URL, str(i)]), headers=headers)
 
-    result_counter = 0
+    result_counter = 1
     for i in range(len(update_content)):
         r = requests.get("/".join([URL, str(i)]), headers=headers)
-        if r.status_code == 404:
-            result_counter+=1
+        if r.status_code == 500:
+            result_counter += 1
 
     assert result_counter, len(update_content)
-
+    print("test passed!")
 
