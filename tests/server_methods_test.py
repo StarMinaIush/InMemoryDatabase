@@ -1,7 +1,9 @@
 import json
 import os
 import requests
+from app import run
 from config import BOOKLIST_JSON_PATH, BOOKLIST_UPDATE_JSON_PATH, URL, DATABASE_DIRECTORY
+from multiprocessing import Process
 
 
 def test_database_load():
@@ -9,6 +11,9 @@ def test_database_load():
     for f in filelist:
         os.remove(os.path.join(DATABASE_DIRECTORY, f))
     headers = {"Content-Type": "application/json"}
+
+    p = Process(target=run)
+    p.start()
 
     with open(BOOKLIST_JSON_PATH) as file:
         test_content = json.loads(file.read())
@@ -48,3 +53,6 @@ def test_database_load():
     assert result_counter, len(update_content)
     print("test passed!")
 
+
+if __name__ == "__main__":
+    test_database_load()

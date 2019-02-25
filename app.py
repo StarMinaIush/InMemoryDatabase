@@ -3,9 +3,8 @@ from flask import Flask, request
 from config import DATABASE_NAME, DATABASE_DIRECTORY
 import os
 
-app = Flask(__name__)
-app.config["DEBUG"] = True
 
+app = Flask(__name__)
 database_path = os.path.join(DATABASE_DIRECTORY, DATABASE_NAME)
 
 
@@ -45,5 +44,11 @@ def handle_bad_request():
 
 
 app.register_error_handler(500, handle_bad_request)
-app.run(threaded=True)
 
+
+def run():
+    app.run(debug=True)
+
+
+if __name__ == "__main__":
+    run()
