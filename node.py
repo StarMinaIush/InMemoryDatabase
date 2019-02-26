@@ -1,11 +1,17 @@
 import json
+import sys
+
 from flask import Flask, request
-from config import DATABASE_NAME, DATABASE_DIRECTORY
+import requests
+from config import DATABASE_NAME, PROXY_IP, PROXY_PORT, PROXY_DIRECTORY
 import os
 
-
 app = Flask(__name__)
-database_path = os.path.join(DATABASE_DIRECTORY, DATABASE_NAME)
+database_path = ""
+
+
+def register_me(ip):
+    requests.post(f"http://{PROXY_IP}:{PROXY_PORT}", data=ip)
 
 
 @app.route('/<id>', methods=['GET', 'PUT', 'DELETE'])
@@ -28,8 +34,6 @@ def process_data(id):
 
 
 def open_db():
-    if not os.path.exists(DATABASE_DIRECTORY):
-        os.makedirs(DATABASE_DIRECTORY)
     db_json_file = open(database_path)
     return json.loads(db_json_file.read())
 
@@ -46,9 +50,16 @@ def handle_bad_request():
 app.register_error_handler(500, handle_bad_request)
 
 
-def run():
-    app.run(debug=True)
+def run(ip, port):
+    if not os.path.exists(os.path.join(PROXY_DIRECTORY, ip)):
+        os.makedirs(os.path.join(PROXY_DIRECTORY, ip))
+    global database_path
+    database_path = os.path.join(PROXY_DIRECTORY, ip, DATABASE_NAME)
+    register_me(ip)
+    app.run(host=ip, port=port, threaded=True)
 
 
 if __name__ == "__main__":
-    run()
+    node_ip = sys.argv[1]
+    port = sys.argv[2]
+    run(node_ip, port)

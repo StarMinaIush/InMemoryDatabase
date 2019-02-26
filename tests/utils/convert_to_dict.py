@@ -5,14 +5,14 @@ from config import BOOKLIST_PATH, BOOKLIST_JSON_PATH, BOOKLIST_UPDATE_JSON_PATH,
 def write_booklist_dict():
     booklist_dict = dict()
     book_counter = 0
-    with open(BOOKLIST_UPDATE_PATH) as file:
+    with open(BOOKLIST_PATH) as file:
         content = file.readlines()
 
     for i in content:
         booklist_dict[book_counter] = i
         book_counter += 1
 
-    with open(BOOKLIST_UPDATE_JSON_PATH, 'w') as jsonfile:
+    with open(BOOKLIST_JSON_PATH, 'w') as jsonfile:
         json.dump(booklist_dict, jsonfile)
 
 
