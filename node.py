@@ -1,6 +1,6 @@
 import json
 import sys
-
+from werkzeug.exceptions import abort
 from flask import Flask, request
 import requests
 from config import DATABASE_NAME, PROXY_IP, PROXY_PORT, PROXY_DIRECTORY, REPLICATION_MODEL
@@ -13,32 +13,48 @@ slaves = list()
 
 
 def register_me(ip):
-    requests.post(f"http://{PROXY_IP}:{PROXY_PORT}", data=ip)
+    registered = False
+    while not registered:
+        try:
+            requests.post(f"http://{PROXY_IP}:{PROXY_PORT}", data=ip)
+            registered = True
+        except requests.RequestException:
+            continue
+    print('cause i am try')
 
 
 @app.route('/<id>', methods=['GET', 'PUT', 'DELETE'])
 def process_data(id):
     if request.method == 'GET':
         db_data = open_db()
-        return db_data[id]
+        if id in db_data:
+            return db_data[id]
+        else:
+            abort(404)
+
     if request.method == 'PUT':
         db_data = dict()
         if os.path.isfile(database_path):
             db_data = open_db()
-        db_data[id] = request.data.decode('ascii')
+        db_data[id] = request.data.decode('utf-8')
         write_data_to_db(db_data)
+
         if REPLICATION_MODEL == "sync":
             replicate_data(db_data)
-            return "data was added to database"
         if REPLICATION_MODEL == "async":
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             loop.run_until_complete(replicate_data(db_data))
             replicate_data(db_data)
-            return "data was added to database"
+
+        return "data was added to database"
+
     if request.method == 'DELETE':
         db_data = open_db()
-        del db_data[id]
+        if id in db_data:
+            del db_data[id]
+        else:
+            abort(404)
         write_data_to_db(db_data)
         return "data was deleted from database"
 
@@ -58,13 +74,6 @@ def open_db():
 def write_data_to_db(db_data):
     with open(database_path, 'w') as fout:
         json.dump(db_data, fout)
-
-
-def handle_bad_request():
-    return "No data with this id in database!"
-
-
-app.register_error_handler(500, handle_bad_request)
 
 
 def run(ip, port):

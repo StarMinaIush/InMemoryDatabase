@@ -4,21 +4,20 @@ import json
 from multiprocessing import Process
 from proxy import run_server
 from node import run
+import time
 
 
 def test_sharding():
-    # запускаем прокси
     p = Process(target=run_server)
     p.start()
-    # запускаем ноду
+    time.sleep(2)
     n1 = Process(target=run, args=("127.0.0.2", 5000,))
     n1.start()
-    # запускаем еще одну ноду
+    time.sleep(4)
     n2 = Process(target=run, args=("127.0.0.3", 5000,))
     n2.start()
+    time.sleep(4)
 
-
-    '''Обращаясь к прокси, добавляем данные, считываем обратно, проверяем что все нормально'''
     with open(BOOKLIST_JSON_PATH) as file:
         test_content = json.loads(file.read())
 
@@ -27,32 +26,27 @@ def test_sharding():
 
     result_dict = dict()
     for i in range(len(test_content)):
-        r = requests.get("/".join([f"http://{PROXY_IP}:{PROXY_PORT}",  "api",  str(i)]))
+        r = requests.get("/".join([f"http://{PROXY_IP}:{PROXY_PORT}", "api", str(i)]))
         result_dict[str(i)] = r.text
 
     assert result_dict, test_content
 
-    #проверить, что данные равномерно распределяются по нодам
-    #останавливаем все процессы
-    p.close()
-    n1.close()
-    n2.close()
-    #запускаем прокси и 4 ноды
+    p.terminate()
+    n1.terminate()
+    n2.terminate()
+
     p = Process(target=run_server)
     p.start()
-    # запускаем ноду
+    time.sleep(2)
     n1 = Process(target=run, args=("127.0.0.2", 5000,))
     n1.start()
-    # запускаем еще одну ноду
+    time.sleep(4)
     n2 = Process(target=run, args=("127.0.0.3", 5000,))
     n2.start()
-
+    time.sleep(4)
     n3 = Process(target=run, args=("127.0.0.4", 5000,))
     n3.start()
-
-
-
-
+    time.sleep(4)
 
 
 if __name__ == "__main__":

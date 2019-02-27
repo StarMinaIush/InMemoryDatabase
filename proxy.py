@@ -4,27 +4,26 @@ from flask import Flask, request
 import requests
 import json
 from config import PROXY_IP, PROXY_PORT, PROXY_DIRECTORY
-from flask_script import Manager
 
 app = Flask(__name__)
-manager = Manager(app)
-nodes = []
+nodes = list()
 
 
 @app.route('/', methods=['POST'])
 def save_node_ip():
+    global nodes
     ip_node = request.data.decode('ascii')
     if ip_node not in nodes:
         nodes.append(ip_node)
     print(nodes)
+    resharding()
     return "OK"
-
-
-n_shard = len(nodes)
 
 
 @app.route('/api/<id>', methods=['GET', 'PUT', 'DELETE'])
 def process_data(id):
+    global nodes
+    n_shard = len(nodes)
     node_number = sharding(int(id), n_shard)
     api_node = "".join(["http://", nodes[node_number], f":{5000}"])
     if request.method == "GET":
@@ -46,7 +45,7 @@ def sharding(id, n_shard):
 
 def resharding():
     global nodes
-    global n_shard
+    n_shard = len(nodes)
     folders = os.listdir(PROXY_DIRECTORY)
     for fold in folders:
         fold_items = [i for i in os.listdir(os.path.join(PROXY_DIRECTORY, fold)) if i.endswith(".json")]
@@ -60,13 +59,8 @@ def resharding():
                     del data[key]
 
 
-@manager.command
 def run_server():
     app.run(host=PROXY_IP, port=PROXY_PORT)
-    #тут нужна несчастная задержка
-
-
-    resharding()
 
 
 if __name__ == "__main__":
