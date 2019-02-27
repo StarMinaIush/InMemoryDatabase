@@ -1,4 +1,6 @@
-from config import PROXY_IP, PROXY_PORT, BOOKLIST_JSON_PATH
+import os
+
+from config import PROXY_IP, PROXY_PORT, BOOKLIST_JSON_PATH, PROXY_DIRECTORY
 import requests
 import json
 from multiprocessing import Process
@@ -30,6 +32,7 @@ def test_sharding():
         result_dict[str(i)] = r.text
 
     assert result_dict, test_content
+    assert "ok", check_len_data_nodes()
 
     p.terminate()
     n1.terminate()
@@ -47,6 +50,22 @@ def test_sharding():
     n3 = Process(target=run, args=("127.0.0.4", 5000,))
     n3.start()
     time.sleep(4)
+
+    assert "ok", check_len_data_nodes()
+
+
+def check_len_data_nodes():
+    count_data = list()
+    folders = os.listdir(PROXY_DIRECTORY)
+    for fold in folders:
+        fold_items = [i for i in os.listdir(os.path.join(PROXY_DIRECTORY, fold)) if i.endswith(".json")]
+        for db in fold_items:
+            db_json_file = open(os.path.join(PROXY_DIRECTORY, fold, db))
+            count_data.append(len(json.loads(db_json_file.read())))
+    for i in range(len(count_data) - 1):
+        if abs(count_data[i] - count_data[i + 1]) > 2:
+            return "error"
+    return "ok"
 
 
 if __name__ == "__main__":
