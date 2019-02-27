@@ -1,5 +1,4 @@
 import json
-import sys
 from werkzeug.exceptions import abort
 from flask import Flask, request
 import requests
@@ -62,7 +61,7 @@ def process_data(id):
 async def replicate_data(db_data):
     global slaves
     for i in slaves:
-        slave_node = "".join(["http://", i, f":{5000}"])
+        slave_node = "".join(["http://", i, ":5000"])
         requests.put("/".join([slave_node, str(i)]), json.dumps(db_data[id]))
 
 
@@ -76,21 +75,17 @@ def write_data_to_db(db_data):
         json.dump(db_data, fout)
 
 
-def run(ip, port):
+def run(ip, port, slaves=None):
     if not os.path.exists(os.path.join(PROXY_DIRECTORY, ip)):
         os.makedirs(os.path.join(PROXY_DIRECTORY, ip))
     global database_path
     database_path = os.path.join(PROXY_DIRECTORY, ip, DATABASE_NAME)
     register_me(ip)
+    if slaves is not None:
+        set_slaves(slaves)
     app.run(host=ip, port=port, threaded=True)
 
 
 def set_slaves(slave: list):
     global slaves
     slaves = slave
-
-
-if __name__ == "__main__":
-    node_ip = sys.argv[1]
-    port = sys.argv[2]
-    run(node_ip, port)

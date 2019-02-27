@@ -61,7 +61,3 @@ def resharding():
 
 def run_server():
     app.run(host=PROXY_IP, port=PROXY_PORT)
-
-
-if __name__ == "__main__":
-    run_server()
