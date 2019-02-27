@@ -6,4 +6,5 @@ BOOKLIST_UPDATE_JSON_PATH = "/home/starminalush/InMemoryDatabase/tests/utils/boo
 PROXY_IP = "127.0.0.1"
 PROXY_PORT=5000
 PROXY_DIRECTORY = "/home/starminalush/InMemoryDatabase/proxy"
+REPLICATION_MODEL = ""
 

@@ -3,11 +3,13 @@ import sys
 
 from flask import Flask, request
 import requests
-from config import DATABASE_NAME, PROXY_IP, PROXY_PORT, PROXY_DIRECTORY
+from config import DATABASE_NAME, PROXY_IP, PROXY_PORT, PROXY_DIRECTORY, REPLICATION_MODEL
 import os
+import asyncio
 
 app = Flask(__name__)
 database_path = ""
+slaves = list()
 
 
 def register_me(ip):
@@ -25,12 +27,27 @@ def process_data(id):
             db_data = open_db()
         db_data[id] = request.data.decode('ascii')
         write_data_to_db(db_data)
-        return "data was added to database"
+        if REPLICATION_MODEL == "sync":
+            replicate_data(db_data)
+            return "data was added to database"
+        if REPLICATION_MODEL == "async":
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(replicate_data(db_data))
+            replicate_data(db_data)
+            return "data was added to database"
     if request.method == 'DELETE':
         db_data = open_db()
         del db_data[id]
         write_data_to_db(db_data)
         return "data was deleted from database"
+
+
+async def replicate_data(db_data):
+    global slaves
+    for i in slaves:
+        slave_node = "".join(["http://", i, f":{5000}"])
+        requests.put("/".join([slave_node, str(i)]), json.dumps(db_data[id]))
 
 
 def open_db():
@@ -57,6 +74,11 @@ def run(ip, port):
     database_path = os.path.join(PROXY_DIRECTORY, ip, DATABASE_NAME)
     register_me(ip)
     app.run(host=ip, port=port, threaded=True)
+
+
+def set_slaves(slave: list):
+    global slaves
+    slaves = slave
 
 
 if __name__ == "__main__":
